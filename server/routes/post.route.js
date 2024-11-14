@@ -1,6 +1,23 @@
 const router = require('express').Router();
 const Post = require('../models/Post');
 
+
+router.post('/create', async (req, res) => {
+    const { title, body } = req.body;
+    try {
+        const newPost = new Post({
+            title,
+            body,
+            author: req.user._id, // Assuming user is authenticated and req.user._id contains the logged-in user ID
+        });
+
+        await newPost.save();
+        res.status(201).json(newPost); // Return the new post as response
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to create post' });
+    }
+});
+
 router.get('/', async (req, res) => {
     try {
         const posts = await Post.find().populate('author').populate('comments.user');
