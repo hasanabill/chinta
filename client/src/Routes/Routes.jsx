@@ -16,3 +16,5 @@ export const router = createBrowserRouter([
         ]
     },
 ]);
+
+export const server = "http://localhost:5000";

@@ -1,15 +1,28 @@
 const express = require('express');
-const cors = require('cors');
 const app = express();
-const PORT = process.env.PORT || 5000;
-
-app.use(cors());
+const mongoose = require('mongoose');
+require('dotenv').config();
 app.use(express.json());
+var cors = require('cors')
+app.use(cors());
 
+const port = process.env.PORT;
+const mongoURI = process.env.MONGO_URI || "";
+
+mongoose.connect(mongoURI)
+    .then(() => console.log("DB Connected"))
+    .catch((err) => console.log(err));
+
+
+// Define a route
 app.get('/', (req, res) => {
-    res.send('Chinta Server is Running');
+    res.send("Server is running");
 });
+app.use("/api/posts", require('./routes/post.route.js'));
+app.use("/api/user", require("./routes/user.route.js"));
 
-app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
+
+// Start the server
+app.listen(port, () => {
+    console.log(`Server is listening at http://localhost:${port}`);
 });
