@@ -12,7 +12,6 @@ const Timeline = () => {
         const fetchPosts = async () => {
             const response = await fetch(`${server}/api/posts`);
             const data = await response.json();
-            console.log(data)
             setPosts(data);
         };
         fetchPosts();

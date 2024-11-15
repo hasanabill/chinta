@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { server } from '../Routes/Routes';
+import { BiSolidUpvote, BiSolidDownvote } from "react-icons/bi";
+import { toast } from 'react-toastify';
 
 const PostDetails = () => {
     const { id } = useParams();
@@ -10,35 +12,58 @@ const PostDetails = () => {
 
     useEffect(() => {
         const fetchPost = async () => {
-            const response = await fetch(`${server}/api/posts/${id}`);
-            const data = await response.json();
-            setPost(data);
+            try {
+                const response = await fetch(`${server}/api/posts/${id}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!response.ok) throw new Error('Failed to fetch post');
+                const data = await response.json();
+                setPost(data);
+            } catch (error) {
+                toast.error(error.message);
+            }
         };
         fetchPost();
-    }, [id]);
+    }, [id, token]);
 
     const handleVote = async (type) => {
-        const response = await fetch(`${server}/api/posts/${id}/${type}`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const updatedPost = await response.json();
-        setPost(updatedPost);
+        try {
+            const response = await fetch(`${server}/api/posts/${id}/${type}`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || `Failed to ${type} post`);
+            }
+
+            const updatedPost = await response.json();
+            setPost(updatedPost);
+        } catch (error) {
+            console.error("Voting Error:", error);
+            toast.error(error.message);
+        }
     };
 
     const handleCommentSubmit = async (e) => {
         e.preventDefault();
-        const response = await fetch(`${server}/api/posts/${id}/comments`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({ comment })
-        });
-        const updatedPost = await response.json();
-        setPost(updatedPost);
-        setComment('');
+        try {
+            const response = await fetch(`${server}/api/posts/${id}/comments`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ comment })
+            });
+            if (!response.ok) throw new Error('Failed to add comment');
+            const updatedPost = await response.json();
+            setPost(updatedPost);
+            setComment('');
+        } catch (error) {
+            toast.error(error.message);
+        }
     };
 
     if (!post) return <p>Loading...</p>;
@@ -47,11 +72,17 @@ const PostDetails = () => {
         <div className="container mx-auto p-4">
             <h1 className="text-3xl font-bold">{post.title}</h1>
             <p className="text-gray-600">By {post.author.username}</p>
-            <p className="mt-4">{post.body}</p>
 
-            <div className="mt-4 flex gap-4">
-                <button onClick={() => handleVote('upvote')} className="bg-green-600 text-white px-4 py-2 rounded">Upvote</button>
-                <button onClick={() => handleVote('downvote')} className="bg-red-600 text-white px-4 py-2 rounded">Downvote</button>
+            {/* Display formatted body */}
+            <div className="mt-4" dangerouslySetInnerHTML={{ __html: post.body }} />
+
+            <div className="mt-4 flex">
+                <button onClick={() => handleVote('upvote')} className="text-green-600 border px-4 py-2 rounded-s-3xl flex items-center gap-2">
+                    <BiSolidUpvote /> {post?.upvotes?.length}
+                </button>
+                <button onClick={() => handleVote('downvote')} className="text-red-600 border px-4 py-2 rounded-e-3xl flex items-center gap-2">
+                    <BiSolidDownvote /> {post?.downvotes?.length}
+                </button>
             </div>
 
             <div className="mt-8">

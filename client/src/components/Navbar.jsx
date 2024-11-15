@@ -6,12 +6,16 @@ import { useState, useEffect } from "react";
 import jwt_decode from "jwt-decode";
 import LoginForm from "./LoginForm";
 import SignupForm from "./SignupForm";
+import logo from "../assets/logo.png";
+import { server } from "../Routes/Routes";
+import PostModal from "./PostModal";
 
 const Navbar = () => {
     const [showLogin, setShowLogin] = useState(false);
     const [showSignup, setShowSignup] = useState(false);
     const [user, setUser] = useState(null);
     const navigate = useNavigate();
+    const [showNewPost, setShowNewPost] = useState(false);
 
 
     useEffect(() => {
@@ -19,7 +23,12 @@ const Navbar = () => {
         if (token) {
             try {
                 const decoded = jwt_decode(token);
-                setUser(decoded);
+                fetch(`${server}/api/user/${decoded._id}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                })
+                    .then(response => response.json())
+                    .then(data => setUser(data));
+
             } catch (error) {
                 console.error("Invalid token", error);
             }
@@ -33,10 +42,10 @@ const Navbar = () => {
     };
 
     return (
-        <nav className="bg-green-700 text-white py-4 px-8">
+        <nav className="bg-green-100 text-[#009c51] px-8">
             <div className="container mx-auto flex items-center justify-between">
                 <Link to="/" className="flex items-center">
-                    <span className="text-2xl font-bold">Chinta</span>
+                    <img src={logo} alt="Logo" className="h-20" />
                 </Link>
 
                 <form className="w-1/3 flex bg-gray-100 rounded-3xl">
@@ -59,6 +68,12 @@ const Navbar = () => {
 
                 {user ? (
                     <div className="flex space-x-4 items-center">
+                        <button
+                            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-3xl"
+                            onClick={() => setShowNewPost(true)}
+                        >
+                            New Post
+                        </button>
                         <Link to="/profile" className="flex items-center font-bold gap-2 hover:bg-red-700 py-2 px-4 rounded-3xl hover:text-green-600">
                             <FaUserCircle /> {user.username}
                         </Link>
@@ -86,7 +101,9 @@ const Navbar = () => {
                     </div>
                 )}
             </div>
-
+            {showNewPost && (
+                <PostModal closeModal={() => setShowNewPost(false)} />
+            )}
             {showLogin && (
                 <div className="fixed inset-0 bg-gray-700 bg-opacity-50 flex justify-center items-center">
                     <div className="bg-white p-8 rounded-md">

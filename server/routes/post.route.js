@@ -1,20 +1,26 @@
 const router = require('express').Router();
 const Post = require('../models/Post');
+const authenticate = require('../middlewares/authenticate');
 
-
-router.post('/create', async (req, res) => {
+router.post('/', authenticate, async (req, res) => {
     const { title, body } = req.body;
+
     try {
         const newPost = new Post({
             title,
             body,
             author: req.user._id,
+            upvotes: [],
+            downvotes: [],
+            comments: []
         });
 
         await newPost.save();
-        return res.status(201).json(newPost);
+
+        res.status(201).json(newPost);
     } catch (error) {
-        return res.status(500).json({ error: 'Failed to create post' });
+        console.error("Error creating post:", error);
+        res.status(500).json({ error: 'Failed to create post' });
     }
 });
 
@@ -22,10 +28,9 @@ router.post('/create', async (req, res) => {
 router.get('/', async (req, res) => {
     try {
         const posts = await Post.find()
-            .populate({ path: 'author', select: 'username email' }) // Specify fields to retrieve from User model
+            .populate({ path: 'author', select: 'username email' })
             .populate({ path: 'comments.user', select: 'username email' })
             .lean();
-
 
         res.json(posts);
     } catch (error) {
@@ -47,9 +52,11 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-router.post('/:id/upvote', async (req, res) => {
+
+router.post('/:id/upvote', authenticate, async (req, res) => {
     try {
         const post = await Post.findById(req.params.id);
+        if (!post) return res.status(404).json({ error: 'Post not found' });
         if (post.upvotes.includes(req.user._id)) {
             post.upvotes = post.upvotes.filter(userId => userId.toString() !== req.user._id);
         } else {
@@ -58,14 +65,18 @@ router.post('/:id/upvote', async (req, res) => {
         }
         await post.save();
         res.json(post);
-    } catch (error) {
+    }
+    catch (error) {
         res.status(500).json({ error: 'Failed to upvote post' });
     }
 });
 
-router.post('/:id/downvote', async (req, res) => {
+
+router.post('/:id/downvote', authenticate, async (req, res) => {
     try {
         const post = await Post.findById(req.params.id);
+        if (!post) return res.status(404).json({ error: 'Post not found' });
+
         if (post.downvotes.includes(req.user._id)) {
             post.downvotes = post.downvotes.filter(userId => userId.toString() !== req.user._id);
         } else {
@@ -79,15 +90,19 @@ router.post('/:id/downvote', async (req, res) => {
     }
 });
 
-router.post('/:id/comments', async (req, res) => {
+router.post('/:id/comments', authenticate, async (req, res) => {
     try {
         const post = await Post.findById(req.params.id);
+        if (!post) return res.status(404).json({ error: 'Post not found' });
+
         post.comments.push({ user: req.user._id, comment: req.body.comment });
         await post.save();
-        res.json(post);
+        const populatedPost = await post.populate('comments.user', 'username').execPopulate();
+        res.json(populatedPost);
     } catch (error) {
         res.status(500).json({ error: 'Failed to add comment' });
     }
 });
+
 
 module.exports = router;
