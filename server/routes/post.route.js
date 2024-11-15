@@ -97,12 +97,18 @@ router.post('/:id/comments', authenticate, async (req, res) => {
 
         post.comments.push({ user: req.user._id, comment: req.body.comment });
         await post.save();
-        const populatedPost = await post.populate('comments.user', 'username').execPopulate();
-        res.json(populatedPost);
+
+        // Populate both the post author and the comments' users
+        const populatedPost = await Post.findById(req.params.id)
+            .populate('author', 'username') // Populate the post's author username
+            .populate('comments.user', 'username'); // Populate each comment's user username
+
+        res.json(populatedPost); // Send the fully populated post back
     } catch (error) {
         res.status(500).json({ error: 'Failed to add comment' });
     }
 });
+
 
 
 module.exports = router;
