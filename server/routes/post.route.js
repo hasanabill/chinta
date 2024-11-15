@@ -8,22 +8,42 @@ router.post('/create', async (req, res) => {
         const newPost = new Post({
             title,
             body,
-            author: req.user._id, // Assuming user is authenticated and req.user._id contains the logged-in user ID
+            author: req.user._id,
         });
 
         await newPost.save();
-        res.status(201).json(newPost); // Return the new post as response
+        return res.status(201).json(newPost);
     } catch (error) {
-        res.status(500).json({ error: 'Failed to create post' });
+        return res.status(500).json({ error: 'Failed to create post' });
     }
 });
 
+
 router.get('/', async (req, res) => {
     try {
-        const posts = await Post.find().populate('author').populate('comments.user');
+        const posts = await Post.find()
+            .populate({ path: 'author', select: 'username email' }) // Specify fields to retrieve from User model
+            .populate({ path: 'comments.user', select: 'username email' })
+            .lean();
+
+
         res.json(posts);
     } catch (error) {
+        console.error('Error fetching posts:', error);
         res.status(500).json({ error: 'Failed to fetch posts' });
+    }
+});
+
+router.get('/:id', async (req, res) => {
+    try {
+        const post = await Post.findById(req.params.id)
+            .populate({ path: 'author', select: 'username email' })
+            .populate({ path: 'comments.user', select: 'username email' })
+            .lean();
+        res.json(post);
+    }
+    catch (error) {
+        res.status(500).json({ error: 'Failed to fetch post' });
     }
 });
 

@@ -3,6 +3,7 @@ import {
 } from "react-router-dom";
 import App from "../App";
 import Home from "../pages/Home";
+import PostDetails from "../pages/PostDetails";
 
 export const router = createBrowserRouter([
     {
@@ -13,6 +14,10 @@ export const router = createBrowserRouter([
                 path: "/",
                 element: <Home />
             },
+            {
+                path: "/post/:id",
+                element: <PostDetails />
+            }
         ]
     },
 ]);
