@@ -4,6 +4,8 @@ import {
 import App from "../App";
 import Home from "../pages/Home";
 import PostDetails from "../pages/PostDetails";
+import NotFound from "../pages/NotFound";
+import Messages from "../pages/Messages";
 
 export const router = createBrowserRouter([
     {
@@ -15,8 +17,16 @@ export const router = createBrowserRouter([
                 element: <Home />
             },
             {
+                path: "/messages",
+                element: <Messages />
+            },
+            {
                 path: "/post/:id",
                 element: <PostDetails />
+            },
+            {
+                path: "*",
+                element: <NotFound />
             }
         ]
     },

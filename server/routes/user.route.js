@@ -15,11 +15,11 @@ router.post('/register', async (req, res) => {
         const newUser = new User({ nid, username, email, password });
         await newUser.save();
 
-        const token = jwt.sign({ _id: newUser._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+        const token = jwt.sign({ _id: newUser._id }, process.env.JWT_SECRET, { expiresIn: '1d' });
 
         res.status(201).json({ token });
     } catch (error) {
-        console.error("Error registering user:", error); // Add this line to log the error
+        console.error("Error registering user:", error);
         res.status(500).json({ error: 'Error registering user' });
     }
 });
@@ -40,7 +40,7 @@ router.post('/login', async (req, res) => {
             return res.status(400).json({ error: 'Invalid credentials' });
         }
 
-        const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+        const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET, { expiresIn: '1d' });
 
         res.status(200).json({ token });
     } catch (error) {

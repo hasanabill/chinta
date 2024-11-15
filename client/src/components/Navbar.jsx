@@ -54,14 +54,14 @@ const Navbar = () => {
                         placeholder="Search ideas..."
                         className="w-full px-4 py-2  rounded-s-3xl text-black"
                     />
-                    <input className="w-32 text-white font-bold  bg-red-600 cursor-pointer hover:bg-red-700 rounded-e-3xl" type="submit" value="Search" />
+                    <input className="w-32 text-white font-bold  bg-[#ff3131] cursor-pointer hover:bg-red-600 rounded-e-3xl" type="submit" value="Search" />
                 </form>
 
                 <div className="flex space-x-6">
-                    <Link to="/" className="flex items-center font-bold gap-2 hover:bg-red-700 py-2 px-4 rounded-3xl hover:text-green-600">
+                    <Link to="/" className="flex items-center font-bold gap-2 hover:bg-[#ff3131] py-2 px-4 rounded-3xl hover:text-white">
                         <TbBulbFilled /> Ideas
                     </Link>
-                    <Link to="/messages" className="flex items-center font-bold gap-2 hover:bg-red-700 py-2 px-4 rounded-3xl hover:text-green-600">
+                    <Link to="/messages" className="flex items-center font-bold gap-2 hover:bg-[#ff3131] py-2 px-4 rounded-3xl hover:text-white">
                         <IoIosMail /> Messages
                     </Link>
                 </div>
@@ -69,7 +69,7 @@ const Navbar = () => {
                 {user ? (
                     <div className="flex space-x-4 items-center">
                         <button
-                            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-3xl"
+                            className="bg-[#009c51] hover:bg-green-700 text-white font-bold py-2 px-4 rounded-3xl"
                             onClick={() => setShowNewPost(true)}
                         >
                             New Post
@@ -78,7 +78,7 @@ const Navbar = () => {
                             <FaUserCircle /> {user.username}
                         </Link>
                         <button
-                            className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-3xl"
+                            className="bg-[#ff3131] hover:bg-red-6600 text-white font-bold py-2 px-4 rounded-3xl"
                             onClick={handleLogout}
                         >
                             Sign Out

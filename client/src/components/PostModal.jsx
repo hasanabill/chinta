@@ -31,8 +31,8 @@ const PostModal = ({ closeModal }) => {
     };
 
     return (
-        <div className="fixed inset-0 bg-gray-700 bg-opacity-50 flex justify-center items-center">
-            <div className="bg-white p-8 rounded-lg max-w-xl w-full">
+        <div className="fixed inset-0 bg-gray-700 bg-opacity-40 flex justify-center items-center">
+            <div className="bg-white p-8 rounded-lg w-2/4">
                 <h2 className="text-2xl font-bold mb-4">Create New Post</h2>
                 <form onSubmit={handleSubmit}>
                     <div className="mb-4">
@@ -51,25 +51,36 @@ const PostModal = ({ closeModal }) => {
                         <ReactQuill
                             value={body}
                             onChange={setBody}
-                            className="bg-white border rounded"
-                            placeholder="Enter the post content..."
+                            className="bg-white rounded-3xl h-[250px]"
+                            placeholder="Describe your idea..."
                             theme="snow"
                         />
                     </div>
-                    <div className="flex justify-end gap-4">
-                        <button
-                            type="button"
-                            className="bg-gray-600 text-white px-4 py-2 rounded"
-                            onClick={closeModal}
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="submit"
-                            className="bg-[#009c51] text-white px-4 py-2 rounded"
-                        >
-                            Post
-                        </button>
+                    <div className="flex justify-between items-center gap-2 mt-16">
+                        <div>
+                            <h2>You will be charged <span className="text-red-600 font-bold">1000 Taka</span> to share this</h2>
+                        </div>
+                        <div className="flex  gap-2">
+                            <button
+                                type="button"
+                                className="bg-emerald-400 text-black w-24 px-4 py-2 rounded-3xl"
+                            >
+                                Verify
+                            </button>
+                            <button
+                                type="button"
+                                className="bg-gray-600 text-white w-24 px-4 py-2 rounded-3xl"
+                                onClick={closeModal}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                className="bg-[#009c51] text-white w-24 px-4 py-2 rounded-3xl"
+                            >
+                                Post
+                            </button>
+                        </div>
                     </div>
                 </form>
             </div>
