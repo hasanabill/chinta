@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const Post = require('../models/Post');
 const authenticate = require('../middlewares/authenticate');
+const User = require('../models/User');
 
 router.post('/', authenticate, async (req, res) => {
     const { title, body } = req.body;
@@ -16,7 +17,11 @@ router.post('/', authenticate, async (req, res) => {
         });
 
         await newPost.save();
-
+        await User.findByIdAndUpdate(
+            req.user._id,
+            { $push: { posts: newPost._id } },
+            { new: true }
+        );
         res.status(201).json(newPost);
     } catch (error) {
         console.error("Error creating post:", error);

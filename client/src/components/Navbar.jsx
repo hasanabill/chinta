@@ -17,7 +17,6 @@ const Navbar = () => {
     const navigate = useNavigate();
     const [showNewPost, setShowNewPost] = useState(false);
 
-
     useEffect(() => {
         const token = localStorage.getItem('token');
         if (token) {
@@ -74,7 +73,7 @@ const Navbar = () => {
                         >
                             New Post
                         </button>
-                        <Link to="/profile" className="flex items-center font-bold gap-2 hover:bg-red-700 py-2 px-4 rounded-3xl hover:text-green-600">
+                        <Link to={`/profile/${user._id}`} className="flex items-center font-bold gap-2 hover:bg-red-700 py-2 px-4 rounded-3xl hover:text-green-600">
                             <FaUserCircle /> {user.username}
                         </Link>
                         <button

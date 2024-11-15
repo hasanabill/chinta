@@ -1,6 +1,7 @@
 const express = require('express');
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
+const authenticate = require('../middlewares/authenticate');
 const router = express.Router();
 
 // Register user
@@ -57,6 +58,56 @@ router.get('/:id', async (req, res) => {
         res.status(200).json(user);
     } catch (error) {
         res.status(500).json({ error: 'Error fetching user' });
+    }
+});
+
+router.get('/profile/:id', async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id)
+            .select('-password')
+            .populate({
+                path: 'posts',
+                select: 'title createdAt upvotes downvotes',
+            })
+            .populate({
+                path: 'upvotedPosts',
+                select: 'title createdAt',
+            })
+            .populate({
+                path: 'downvotedPosts',
+                select: 'title createdAt',
+            });
+
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        res.status(200).json(user);
+    } catch (error) {
+        console.error('Error fetching user profile:', error);
+        res.status(500).json({ error: 'Error fetching user profile' });
+    }
+});
+
+
+router.post('/profile/:id/posts', authenticate, async (req, res) => {
+    const { title, body } = req.body;
+
+    try {
+        const user = await User.findById(req.params.id);
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        const newPost = new Post({ title, body, author: user._id });
+        const savedPost = await newPost.save();
+
+        user.posts.push(savedPost._id);
+        await user.save();
+
+        res.status(201).json(savedPost);
+    } catch (error) {
+        res.status(500).json({ error: 'Error creating post' });
     }
 });
 

@@ -22,7 +22,7 @@ export const router = createBrowserRouter([
                 element: <Messages />
             },
             {
-                path: "profile",
+                path: "profile/:id",
                 element: <Profile />
             },
             {
