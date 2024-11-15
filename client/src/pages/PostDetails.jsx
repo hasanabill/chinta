@@ -127,7 +127,7 @@ const PostDetails = () => {
             </div>
 
             <div className="bg-gray-100 p-6 rounded-lg shadow-md mt-8">
-                <h2 className="text-2xl font-bold mb-4">Comments</h2>
+                <h2 className="text-2xl font-bold mb-4">{post?.comments?.length || 0} Comments </h2>
                 <form onSubmit={handleCommentSubmit} className="mb-6">
                     <textarea
                         value={comment}
