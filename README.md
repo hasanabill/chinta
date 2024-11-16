@@ -1,6 +1,6 @@
 # Chinta
 
-Chinta is a platform where citizens can connect with the government to propose constructive ideas for the country's betterment. Citizens must use their National ID (NID) to register, and they can post ideas with a cooldown period. Popular ideas will be reviewed and potentially acted upon by the government.
+The forum "Chinta" aims to connect citizens and the government for constructive national development. Users register with NID verification to ensure authenticity, with a pay-to-post model filtering quality contributions. Posts follow structured templates, are moderated for relevance, and feature a democratic voting system to highlight popular ideas. Measures like cooldowns prevent spamming, while regional forums and mobile integration enhance accessibility. A transparent system tracks government action on ideas, supported by public-private partnerships and incentives for users. Regular consultations with officials foster accountability, addressing challenges like content moderation and inclusivity. "Chinta" aspires to empower citizens and strengthen democracy in Bangladesh.
 
 ## Project Structure
 
