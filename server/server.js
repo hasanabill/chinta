@@ -20,6 +20,7 @@ const mongoURI = process.env.MONGO_URI || "";
 const userSockets = new Map();
 const toId = (id) => id.toString();
 const isTestEnv = process.env.NODE_ENV === 'test';
+const roomName = (conversationId) => `conversation:${conversationId}`;
 
 const io = new Server(server, {
     cors: { origin: '*', methods: ['GET', 'POST', 'DELETE'] },
@@ -112,16 +113,37 @@ io.on('connection', (socket) => {
     sockets.push(socket.id);
     userSockets.set(socket.userId, sockets);
 
+    socket.on('conversation:join', async ({ conversationId }) => {
+        if (!conversationId || !mongoose.Types.ObjectId.isValid(conversationId)) return;
+        try {
+            const conversation = await Conversation.findById(conversationId).select('participants');
+            if (!conversation) return;
+            const isParticipant = conversation.participants.some((id) => toId(id) === socket.userId);
+            if (!isParticipant) return;
+            socket.join(roomName(conversationId));
+        } catch (error) {
+            console.error('Socket conversation:join failed', error);
+        }
+    });
+
+    socket.on('conversation:leave', ({ conversationId }) => {
+        if (!conversationId || !mongoose.Types.ObjectId.isValid(conversationId)) return;
+        socket.leave(roomName(conversationId));
+    });
+
     socket.on('typing:start', ({ conversationId }) => {
-        socket.broadcast.emit('typing:start', { conversationId, userId: socket.userId });
+        if (!conversationId || !mongoose.Types.ObjectId.isValid(conversationId)) return;
+        socket.to(roomName(conversationId)).emit('typing:start', { conversationId, userId: socket.userId });
     });
 
     socket.on('typing:stop', ({ conversationId }) => {
-        socket.broadcast.emit('typing:stop', { conversationId, userId: socket.userId });
+        if (!conversationId || !mongoose.Types.ObjectId.isValid(conversationId)) return;
+        socket.to(roomName(conversationId)).emit('typing:stop', { conversationId, userId: socket.userId });
     });
 
     socket.on('conversation:read', ({ conversationId }) => {
-        socket.broadcast.emit('conversation:read', { conversationId, userId: socket.userId });
+        if (!conversationId || !mongoose.Types.ObjectId.isValid(conversationId)) return;
+        socket.to(roomName(conversationId)).emit('conversation:read', { conversationId, userId: socket.userId });
     });
 
     socket.on('disconnect', () => {

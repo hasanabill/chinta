@@ -8,6 +8,7 @@ const User = require('../models/User');
 const isValidId = (id) => mongoose.Types.ObjectId.isValid(id);
 const toId = (id) => id.toString();
 const conversationHash = (a, b) => [toId(a), toId(b)].sort().join(':');
+const roomName = (conversationId) => `conversation:${conversationId}`;
 
 const canMessageRecipient = async (senderId, recipientId) => {
     const [sender, recipient] = await Promise.all([
@@ -120,6 +121,8 @@ module.exports = ({ io, userSockets }) => {
                 .populate('sender', 'username profilePicture')
                 .lean();
 
+            io.to(roomName(conversationId)).emit('message:receive', populatedMessage);
+
             conversation.participants
                 .map((id) => toId(id))
                 .filter((id) => id !== req.user._id)
@@ -133,6 +136,30 @@ module.exports = ({ io, userSockets }) => {
             res.status(201).json(populatedMessage);
         } catch (error) {
             res.status(500).json({ error: 'Failed to send message' });
+        }
+    });
+
+    router.post('/conversations/:conversationId/read', authenticate, async (req, res) => {
+        const { conversationId } = req.params;
+        if (!isValidId(conversationId)) return res.status(400).json({ error: 'Invalid conversation id' });
+
+        try {
+            const conversation = await Conversation.findById(conversationId).select('participants');
+            if (!conversation) return res.status(404).json({ error: 'Conversation not found' });
+
+            const isParticipant = conversation.participants.some((id) => toId(id) === req.user._id);
+            if (!isParticipant) return res.status(403).json({ error: 'Unauthorized conversation access' });
+
+            await Message.updateMany(
+                { conversationId, readBy: { $ne: req.user._id } },
+                { $addToSet: { readBy: req.user._id } }
+            );
+
+            const payload = { conversationId, userId: req.user._id };
+            io.to(roomName(conversationId)).emit('conversation:read', payload);
+            res.status(200).json({ success: true });
+        } catch (error) {
+            res.status(500).json({ error: 'Failed to mark conversation as read' });
         }
     });
 

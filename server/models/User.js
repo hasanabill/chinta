@@ -10,11 +10,24 @@ const userSchema = new mongoose.Schema({
     username: {
         type: String,
         required: true,
+        trim: true,
+    },
+    firstName: {
+        type: String,
+        default: '',
+        trim: true,
+    },
+    lastName: {
+        type: String,
+        default: '',
+        trim: true,
     },
     email: {
         type: String,
         required: true,
         unique: true,
+        lowercase: true,
+        trim: true,
     },
     password: {
         type: String,
@@ -27,6 +40,25 @@ const userSchema = new mongoose.Schema({
     bio: {
         type: String,
         default: "This user hasn't added a bio yet.",
+    },
+    dateOfBirth: {
+        type: Date,
+        default: null,
+    },
+    location: {
+        type: String,
+        default: '',
+        trim: true,
+    },
+    occupation: {
+        type: String,
+        default: '',
+        trim: true,
+    },
+    website: {
+        type: String,
+        default: '',
+        trim: true,
     },
     posts: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Post' }], // Authored posts
     upvotedPosts: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Post' }], // Posts upvoted by user

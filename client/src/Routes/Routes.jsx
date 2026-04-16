@@ -8,6 +8,10 @@ import NotFound from "../pages/NotFound";
 import Messages from "../pages/Messages";
 import Profile from "../pages/Profile";
 import ForumCategory from "../pages/ForumCategory";
+import ForumTag from "../pages/ForumTag";
+import LoginPage from "../pages/LoginPage";
+import SignupPage from "../pages/SignupPage";
+import SearchResults from "../pages/SearchResults";
 
 export const router = createBrowserRouter([
     {
@@ -23,12 +27,28 @@ export const router = createBrowserRouter([
                 element: <Messages />
             },
             {
+                path: "/search",
+                element: <SearchResults />
+            },
+            {
+                path: "/login",
+                element: <LoginPage />
+            },
+            {
+                path: "/signup",
+                element: <SignupPage />
+            },
+            {
                 path: "/conversation/:id",
                 element: <Messages />
             },
             {
                 path: "/forum/:category",
                 element: <ForumCategory />
+            },
+            {
+                path: "/forum/tag/:tag",
+                element: <ForumTag />
             },
             {
                 path: "profile/:id",

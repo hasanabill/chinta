@@ -1,4 +1,5 @@
 const router = require('express').Router();
+const jwt = require('jsonwebtoken');
 const Post = require('../models/Post');
 const Reply = require('../models/Reply');
 const authenticate = require('../middlewares/authenticate');
@@ -8,6 +9,20 @@ const mongoose = require('mongoose');
 const isSameUserId = (a, b) => a?.toString() === b?.toString();
 const isValidId = (id) => mongoose.Types.ObjectId.isValid(id);
 const ALLOWED_CATEGORIES = ['general', 'tech', 'politics', 'finance', 'education', 'health', 'other'];
+const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const isFollowingFeed = (value) => ['1', 'true', 'following'].includes((value || '').toString().toLowerCase());
+
+const getUserIdFromAuthHeader = (req) => {
+    const authHeader = req.header('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
+    const token = authHeader.replace('Bearer ', '');
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        return decoded?._id || null;
+    } catch {
+        return null;
+    }
+};
 
 const parseTags = (tags) => {
     if (!tags) return [];
@@ -48,11 +63,42 @@ router.post('/', authenticate, async (req, res) => {
 
 router.get('/', async (req, res) => {
     try {
-        const { category, tag, sort = 'recent' } = req.query;
+        const { category, tag, q, sort = 'recent', feed } = req.query;
         const filter = {};
         if (category && ALLOWED_CATEGORIES.includes(category)) filter.category = category;
         if (tag) filter.tags = tag.toString().trim().toLowerCase();
         filter.parentPost = null;
+
+        if (isFollowingFeed(feed)) {
+            const requesterId = getUserIdFromAuthHeader(req);
+            if (!requesterId) {
+                return res.status(401).json({ error: 'Login required for following feed' });
+            }
+            const requester = await User.findById(requesterId).select('following').lean();
+            if (!requester) {
+                return res.status(404).json({ error: 'User not found' });
+            }
+
+            const followingIds = requester.following || [];
+            filter.author = { $in: followingIds };
+        }
+
+        if (q && q.toString().trim()) {
+            const searchText = q.toString().trim();
+            const regex = new RegExp(escapeRegex(searchText), 'i');
+            const matchedUsers = await User.find({
+                $or: [{ username: regex }, { firstName: regex }, { lastName: regex }],
+            }).select('_id').lean();
+            const matchedUserIds = matchedUsers.map((user) => user._id);
+
+            filter.$or = [
+                { title: regex },
+                { body: regex },
+                { tags: regex },
+                { category: regex },
+                { author: { $in: matchedUserIds } },
+            ];
+        }
 
         const query = Post.find(filter)
             .populate({ path: 'author', select: 'username email' })
