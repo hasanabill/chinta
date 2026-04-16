@@ -3,6 +3,8 @@ const Post = require('../models/Post');
 const authenticate = require('../middlewares/authenticate');
 const User = require('../models/User');
 
+const isSameUserId = (a, b) => a?.toString() === b?.toString();
+
 router.post('/', authenticate, async (req, res) => {
     const { title, body } = req.body;
 
@@ -50,6 +52,7 @@ router.get('/:id', async (req, res) => {
             .populate({ path: 'author', select: 'username email' })
             .populate({ path: 'comments.user', select: 'username email' })
             .lean();
+        if (!post) return res.status(404).json({ error: 'Post not found' });
         res.json(post);
     }
     catch (error) {
@@ -62,11 +65,18 @@ router.post('/:id/upvote', authenticate, async (req, res) => {
     try {
         const post = await Post.findById(req.params.id);
         if (!post) return res.status(404).json({ error: 'Post not found' });
-        if (post.upvotes.includes(req.user._id)) {
-            post.upvotes = post.upvotes.filter(userId => userId.toString() !== req.user._id);
+
+        const hasUpvoted = post.upvotes.some(userId => isSameUserId(userId, req.user._id));
+        if (hasUpvoted) {
+            post.upvotes = post.upvotes.filter(userId => !isSameUserId(userId, req.user._id));
+            await User.findByIdAndUpdate(req.user._id, { $pull: { upvotedPosts: post._id } });
         } else {
             post.upvotes.push(req.user._id);
-            post.downvotes = post.downvotes.filter(userId => userId.toString() !== req.user._id);
+            post.downvotes = post.downvotes.filter(userId => !isSameUserId(userId, req.user._id));
+            await User.findByIdAndUpdate(req.user._id, {
+                $addToSet: { upvotedPosts: post._id },
+                $pull: { downvotedPosts: post._id },
+            });
         }
         await post.save();
         res.json(post);
@@ -82,11 +92,17 @@ router.post('/:id/downvote', authenticate, async (req, res) => {
         const post = await Post.findById(req.params.id);
         if (!post) return res.status(404).json({ error: 'Post not found' });
 
-        if (post.downvotes.includes(req.user._id)) {
-            post.downvotes = post.downvotes.filter(userId => userId.toString() !== req.user._id);
+        const hasDownvoted = post.downvotes.some(userId => isSameUserId(userId, req.user._id));
+        if (hasDownvoted) {
+            post.downvotes = post.downvotes.filter(userId => !isSameUserId(userId, req.user._id));
+            await User.findByIdAndUpdate(req.user._id, { $pull: { downvotedPosts: post._id } });
         } else {
             post.downvotes.push(req.user._id);
-            post.upvotes = post.upvotes.filter(userId => userId.toString() !== req.user._id);
+            post.upvotes = post.upvotes.filter(userId => !isSameUserId(userId, req.user._id));
+            await User.findByIdAndUpdate(req.user._id, {
+                $addToSet: { downvotedPosts: post._id },
+                $pull: { upvotedPosts: post._id },
+            });
         }
         await post.save();
         res.json(post);
@@ -99,8 +115,10 @@ router.post('/:id/comments', authenticate, async (req, res) => {
     try {
         const post = await Post.findById(req.params.id);
         if (!post) return res.status(404).json({ error: 'Post not found' });
+        const comment = req.body.comment?.trim();
+        if (!comment) return res.status(400).json({ error: 'Comment is required' });
 
-        post.comments.push({ user: req.user._id, comment: req.body.comment });
+        post.comments.push({ user: req.user._id, comment });
         await post.save();
 
         const populatedPost = await Post.findById(req.params.id)

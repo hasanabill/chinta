@@ -6,7 +6,7 @@ import { useState, useEffect } from "react";
 import jwt_decode from "jwt-decode";
 import LoginForm from "./LoginForm";
 import SignupForm from "./SignupForm";
-import logo from "../assets/logo.png";
+import logo from "../assets/logo.svg";
 import { server } from "../Routes/Routes";
 import PostModal from "./PostModal";
 
@@ -36,6 +36,7 @@ const Navbar = () => {
 
     const handleLogout = () => {
         localStorage.removeItem('token');
+        localStorage.removeItem('userId');
         setUser(null);
         navigate("/");
     };
@@ -44,7 +45,7 @@ const Navbar = () => {
         <nav className="bg-green-100 text-[#009c51] px-8">
             <div className="container mx-auto flex items-center justify-between">
                 <Link to="/" className="flex items-center">
-                    <img src={logo} alt="Logo" className="h-20" />
+                    <img src={logo} alt="Chinta Logo" className="h-20" />
                 </Link>
 
                 <form className="w-1/3 flex bg-gray-100 rounded-3xl">
@@ -77,7 +78,7 @@ const Navbar = () => {
                             <FaUserCircle /> {user.username}
                         </Link>
                         <button
-                            className="bg-[#ff3131] hover:bg-red-6600 text-white font-bold py-2 px-4 rounded-3xl"
+                            className="bg-[#ff3131] hover:bg-red-700 text-white font-bold py-2 px-4 rounded-3xl"
                             onClick={handleLogout}
                         >
                             Sign Out

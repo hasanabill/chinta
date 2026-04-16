@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { server } from '../Routes/Routes';
+import jwt_decode from 'jwt-decode';
 
 const SignupForm = ({ closeModal }) => {
     const [nid, setNid] = useState('');
@@ -9,18 +10,23 @@ const SignupForm = ({ closeModal }) => {
 
     const handleSignup = async (e) => {
         e.preventDefault();
-        const response = await fetch(`${server}/api/user/register`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ nid, username, email, password })
-        });
-        const data = await response.json();
-        if (data.token) {
-            localStorage.setItem('token', data.token);
-            closeModal();
-        } else {
-            console.log(response)
-            alert(response.error);
+        try {
+            const response = await fetch(`${server}/api/user/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nid, username, email, password })
+            });
+            const data = await response.json();
+            if (data.token) {
+                localStorage.setItem('token', data.token);
+                const decoded = jwt_decode(data.token);
+                localStorage.setItem('userId', decoded._id);
+                closeModal();
+            } else {
+                alert(data.error || 'Signup failed');
+            }
+        } catch {
+            alert('Signup failed');
         }
     };
 

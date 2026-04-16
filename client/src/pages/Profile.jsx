@@ -1,13 +1,12 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 import { useParams } from "react-router-dom";
 import { server } from "../Routes/Routes";
 
-const Profile = ({ userId }) => {
+const Profile = () => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
     const id = useParams().id;
-    console.log(id)
 
     useEffect(() => {
         const fetchUserProfile = async () => {
@@ -26,7 +25,7 @@ const Profile = ({ userId }) => {
         };
 
         fetchUserProfile();
-    }, [userId]);
+    }, [id]);
 
     if (loading) return <div>Loading...</div>;
 

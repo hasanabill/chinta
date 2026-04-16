@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { server } from '../Routes/Routes';
 import { BiSolidUpvote, BiSolidDownvote } from "react-icons/bi";
 import { toast } from 'react-toastify';
 import LoadingSpinner from '../components/LoadingSpinner';
+import jwt_decode from 'jwt-decode';
 
 const PostDetails = () => {
     const { id } = useParams();
@@ -11,9 +12,17 @@ const PostDetails = () => {
     const [comment, setComment] = useState('');
     const [userVote, setUserVote] = useState(null);
     const token = localStorage.getItem('token');
-    const userId = localStorage.getItem('userId');
+    let userId = null;
 
-    const fetchPost = async () => {
+    if (token) {
+        try {
+            userId = jwt_decode(token)._id;
+        } catch {
+            userId = null;
+        }
+    }
+
+    const fetchPost = useCallback(async () => {
         try {
             const response = await fetch(`${server}/api/posts/${id}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
@@ -22,22 +31,29 @@ const PostDetails = () => {
             const data = await response.json();
             setPost(data);
 
-            const userVoteStatus = data.upvotes.includes(userId)
+            const upvotes = data?.upvotes || [];
+            const downvotes = data?.downvotes || [];
+            const userVoteStatus = upvotes.some((voteId) => voteId?.toString() === userId)
                 ? 'upvoted'
-                : data.downvotes.includes(userId)
+                : downvotes.some((voteId) => voteId?.toString() === userId)
                     ? 'downvoted'
                     : null;
             setUserVote(userVoteStatus);
         } catch (error) {
             toast.error(error.message);
         }
-    };
+    }, [id, token, userId]);
 
     useEffect(() => {
         fetchPost();
-    }, [id, token]);
+    }, [fetchPost]);
 
     const handleVote = async (type) => {
+        if (!token) {
+            toast.error('Please login to vote');
+            return;
+        }
+
         try {
             const response = await fetch(`${server}/api/posts/${id}/${type}`, {
                 method: 'POST',
@@ -57,27 +73,19 @@ const PostDetails = () => {
     };
 
     const handleUpvote = () => {
-        if (userVote === 'upvoted') {
-            setUserVote(null);
-            handleVote('remove-upvote');
-        } else {
-            setUserVote('upvoted');
-            handleVote('upvote');
-        }
+        handleVote('upvote');
     };
 
     const handleDownvote = () => {
-        if (userVote === 'downvoted') {
-            setUserVote(null);
-            handleVote('remove-downvote');
-        } else {
-            setUserVote('downvoted');
-            handleVote('downvote');
-        }
+        handleVote('downvote');
     };
 
     const handleCommentSubmit = async (e) => {
         e.preventDefault();
+        if (!token) {
+            toast.error('Please login to comment');
+            return;
+        }
         try {
             const response = await fetch(`${server}/api/posts/${id}/comments`, {
                 method: 'POST',

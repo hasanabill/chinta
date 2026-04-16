@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 120" role="img" aria-label="Chinta logo">
+  <rect width="320" height="120" fill="none"/>
+  <g transform="translate(14 12)">
+    <circle cx="42" cy="42" r="34" fill="#009c51"/>
+    <path d="M42 16c-12 0-22 10-22 22 0 9 5 16 12 20v8h20v-8c7-4 12-11 12-20 0-12-10-22-22-22z" fill="#fff"/>
+    <rect x="34" y="68" width="16" height="5" rx="2.5" fill="#fff"/>
+    <rect x="32" y="75" width="20" height="5" rx="2.5" fill="#fff"/>
+  </g>
+  <text x="98" y="72" font-family="Inter, Arial, sans-serif" font-size="46" font-weight="800" fill="#009c51">Chinta</text>
+</svg>
