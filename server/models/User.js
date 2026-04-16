@@ -2,10 +2,10 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
 const userSchema = new mongoose.Schema({
-    nid: {
+    legacyNid: {
         type: String,
-        required: true,
-        unique: true,
+        required: false,
+        sparse: true,
     },
     username: {
         type: String,

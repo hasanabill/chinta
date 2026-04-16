@@ -1,6 +1,6 @@
 # Chinta
 
-The forum "Chinta" aims to connect citizens and the government for constructive national development. Users register with NID verification to ensure authenticity, with a pay-to-post model filtering quality contributions. Posts follow structured templates, are moderated for relevance, and feature a democratic voting system to highlight popular ideas. Measures like cooldowns prevent spamming, while regional forums and mobile integration enhance accessibility. A transparent system tracks government action on ideas, supported by public-private partnerships and incentives for users. Regular consultations with officials foster accountability, addressing challenges like content moderation and inclusivity. "Chinta" aspires to empower citizens and strengthen democracy in Bangladesh.
+Chinta is a community-first social forum for the Ummah to share ideas, discuss issues, support each other, and build meaningful conversations. Members can create posts, follow people, vote on content, join category-based discussions, and chat through realtime messaging.
 
 ## Project Structure
 
@@ -106,11 +106,12 @@ npm run build
 
 ## Features
 
-- **National ID-based Authentication**: Users need to provide valid National IDs to create accounts.
-- **Post Ideas**: Users can post constructive ideas for the nation's improvement.
-- **Upvote/Downvote System**: Ideas can be upvoted or downvoted by other users.
-- **Post Cooldown**: A cooldown period between posts to ensure thoughtful contributions.
-- **Action by Government**: Popular ideas are forwarded for government action.
+- **Community Authentication**: Users can create accounts with standard credentials.
+- **Forum Posting**: Members can publish posts with categories and tags.
+- **Threaded Discussions**: Posts can have replies for deeper, structured conversations.
+- **Follow System**: Members can follow each other and build social connections.
+- **Realtime Messaging**: 1:1 chat with live updates using sockets.
+- **Upvote/Downvote System**: The community can signal valuable content.
 
 ## Technologies
 

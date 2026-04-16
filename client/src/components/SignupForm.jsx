@@ -3,7 +3,6 @@ import { server } from '../Routes/Routes';
 import jwt_decode from 'jwt-decode';
 
 const SignupForm = ({ closeModal }) => {
-    const [nid, setNid] = useState('');
     const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -14,7 +13,7 @@ const SignupForm = ({ closeModal }) => {
             const response = await fetch(`${server}/api/user/register`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ nid, username, email, password })
+                body: JSON.stringify({ username, email, password })
             });
             const data = await response.json();
             if (data.token) {
@@ -33,14 +32,6 @@ const SignupForm = ({ closeModal }) => {
     return (
         <form onSubmit={handleSignup}>
             <h2 className="text-lg font-bold mb-4">Sign Up</h2>
-            <input
-                type="text"
-                placeholder="NID"
-                value={nid}
-                onChange={(e) => setNid(e.target.value)}
-                className="w-full mb-4 px-4 py-2 border text-black rounded"
-                required
-            />
             <input
                 type="text"
                 placeholder="Username"

@@ -13,13 +13,6 @@ const postSchema = new mongoose.Schema({
     parentPost: { type: mongoose.Schema.Types.ObjectId, ref: 'Post', default: null },
     upvotes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], // Users who upvoted
     downvotes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], // Users who downvoted
-    comments: [
-        {
-            user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-            comment: { type: String },
-            date: { type: Date, default: Date.now }
-        }
-    ],
     createdAt: { type: Date, default: Date.now }
 });
 

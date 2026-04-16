@@ -7,14 +7,18 @@ const router = express.Router();
 
 // Register user
 router.post('/register', async (req, res) => {
-    const { nid, username, email, password } = req.body;
+    const { username, email, password } = req.body;
     try {
-        const existingUser = await User.findOne({ $or: [{ nid }, { email }] });
-        if (existingUser) {
-            return res.status(400).json({ error: 'NID or Email already in use' });
+        if (!username || !email || !password) {
+            return res.status(400).json({ error: 'Username, email, and password are required' });
         }
 
-        const newUser = new User({ nid, username, email, password });
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+            return res.status(400).json({ error: 'Email already in use' });
+        }
+
+        const newUser = new User({ username, email, password });
         await newUser.save();
 
         const token = jwt.sign({ _id: newUser._id }, process.env.JWT_SECRET, { expiresIn: '1d' });
@@ -68,7 +72,8 @@ router.get('/profile/:id', async (req, res) => {
             .select('-password')
             .populate({
                 path: 'posts',
-                select: 'title createdAt upvotes downvotes',
+                match: { parentPost: null },
+                select: 'title createdAt upvotes downvotes category tags',
             })
             .populate({
                 path: 'upvotedPosts',

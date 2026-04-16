@@ -1,5 +1,6 @@
 const router = require('express').Router();
 const Post = require('../models/Post');
+const Reply = require('../models/Reply');
 const authenticate = require('../middlewares/authenticate');
 const User = require('../models/User');
 const mongoose = require('mongoose');
@@ -15,25 +16,20 @@ const parseTags = (tags) => {
 };
 
 router.post('/', authenticate, async (req, res) => {
-    const { title, body, category, tags, parentPost } = req.body;
+    const { title, body, category, tags } = req.body;
     const parsedCategory = ALLOWED_CATEGORIES.includes(category) ? category : 'general';
     const parsedTags = parseTags(tags);
 
     try {
-        if (parentPost && !isValidId(parentPost)) {
-            return res.status(400).json({ error: 'Invalid parent post id' });
-        }
-
         const newPost = new Post({
             title,
             body,
             author: req.user._id,
             category: parsedCategory,
             tags: parsedTags,
-            parentPost: parentPost || null,
+            parentPost: null,
             upvotes: [],
-            downvotes: [],
-            comments: []
+            downvotes: []
         });
 
         await newPost.save();
@@ -56,10 +52,10 @@ router.get('/', async (req, res) => {
         const filter = {};
         if (category && ALLOWED_CATEGORIES.includes(category)) filter.category = category;
         if (tag) filter.tags = tag.toString().trim().toLowerCase();
+        filter.parentPost = null;
 
         const query = Post.find(filter)
             .populate({ path: 'author', select: 'username email' })
-            .populate({ path: 'comments.user', select: 'username email' })
             .populate({ path: 'parentPost', select: 'title' })
             .sort({ createdAt: -1 });
 
@@ -79,32 +75,56 @@ router.get('/', async (req, res) => {
     }
 });
 
+router.get('/:id/replies', async (req, res) => {
+    try {
+        if (!isValidId(req.params.id)) return res.status(400).json({ error: 'Invalid post id' });
+        const replies = await Reply.find({ parentPost: req.params.id })
+            .populate({ path: 'author', select: 'username email' })
+            .sort({ createdAt: 1 })
+            .lean();
+        res.json(replies);
+    }
+    catch (error) {
+        console.error('Error fetching replies:', error);
+        res.status(500).json({ error: 'Failed to fetch replies' });
+    }
+});
+
+router.post('/:id/replies', authenticate, async (req, res) => {
+    const body = req.body.body?.trim();
+    try {
+        if (!isValidId(req.params.id)) return res.status(400).json({ error: 'Invalid post id' });
+        const parentPost = await Post.findById(req.params.id).select('_id');
+        if (!parentPost) return res.status(404).json({ error: 'Post not found' });
+        if (!body) return res.status(400).json({ error: 'Reply body is required' });
+
+        const reply = await Reply.create({
+            parentPost: req.params.id,
+            author: req.user._id,
+            body,
+        });
+
+        const populatedReply = await Reply.findById(reply._id)
+            .populate({ path: 'author', select: 'username email' })
+            .lean();
+        res.status(201).json(populatedReply);
+    } catch (error) {
+        console.error('Error creating reply:', error);
+        res.status(500).json({ error: 'Failed to create reply' });
+    }
+});
+
 router.get('/:id', async (req, res) => {
     try {
         if (!isValidId(req.params.id)) return res.status(400).json({ error: 'Invalid post id' });
         const post = await Post.findById(req.params.id)
             .populate({ path: 'author', select: 'username email' })
-            .populate({ path: 'comments.user', select: 'username email' })
             .populate({ path: 'parentPost', select: 'title' })
             .lean();
         if (!post) return res.status(404).json({ error: 'Post not found' });
         res.json(post);
-    }
-    catch (error) {
-        res.status(500).json({ error: 'Failed to fetch post' });
-    }
-});
-
-router.get('/:id/replies', async (req, res) => {
-    try {
-        if (!isValidId(req.params.id)) return res.status(400).json({ error: 'Invalid post id' });
-        const replies = await Post.find({ parentPost: req.params.id })
-            .populate({ path: 'author', select: 'username email' })
-            .sort({ createdAt: 1 })
-            .lean();
-        res.json(replies);
     } catch (error) {
-        res.status(500).json({ error: 'Failed to fetch replies' });
+        res.status(500).json({ error: 'Failed to fetch post' });
     }
 });
 
@@ -160,28 +180,5 @@ router.post('/:id/downvote', authenticate, async (req, res) => {
         res.status(500).json({ error: 'Failed to downvote post' });
     }
 });
-
-router.post('/:id/comments', authenticate, async (req, res) => {
-    try {
-        if (!isValidId(req.params.id)) return res.status(400).json({ error: 'Invalid post id' });
-        const post = await Post.findById(req.params.id);
-        if (!post) return res.status(404).json({ error: 'Post not found' });
-        const comment = req.body.comment?.trim();
-        if (!comment) return res.status(400).json({ error: 'Comment is required' });
-
-        post.comments.push({ user: req.user._id, comment });
-        await post.save();
-
-        const populatedPost = await Post.findById(req.params.id)
-            .populate('author', 'username')
-            .populate('comments.user', 'username');
-
-        res.json(populatedPost);
-    } catch (error) {
-        res.status(500).json({ error: 'Failed to add comment' });
-    }
-});
-
-
 
 module.exports = router;

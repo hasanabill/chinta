@@ -1,5 +1,4 @@
 import { BiSolidDownvote, BiSolidUpvote } from "react-icons/bi";
-import { FaCommentDots } from "react-icons/fa";
 
 const Post = ({ post }) => {
     return (
@@ -31,10 +30,6 @@ const Post = ({ post }) => {
                     <div className="flex items-center gap-1">
                         <span className="font-semibold text-red-500"><BiSolidDownvote /></span>
                         <span>{post?.downvotes?.length || 0}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                        <span className="font-semibold text-blue-500"><FaCommentDots /></span>
-                        <span>{post?.comments?.length || 0} Comments</span>
                     </div>
                 </div>
 

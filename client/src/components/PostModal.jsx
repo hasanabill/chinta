@@ -59,7 +59,7 @@ const PostModal = ({ closeModal }) => {
                             value={body}
                             onChange={setBody}
                             className="bg-white rounded-3xl h-[250px]"
-                            placeholder="Describe your idea..."
+                            placeholder="Share your thoughts with the community..."
                             theme="snow"
                         />
                     </div>
@@ -92,16 +92,10 @@ const PostModal = ({ closeModal }) => {
                         </div>
                     </div>
                     <div className="flex justify-between items-center gap-2 mt-16">
-                        <div>
-                            <h2>You will be charged <span className="text-red-600 font-bold">1000 Taka</span> to share this</h2>
+                        <div className="text-sm text-gray-600">
+                            Post respectfully and keep discussions beneficial for the Ummah.
                         </div>
-                        <div className="flex  gap-2">
-                            <button
-                                type="button"
-                                className="bg-emerald-400 text-black w-24 px-4 py-2 rounded-3xl"
-                            >
-                                Verify
-                            </button>
+                        <div className="flex gap-2">
                             <button
                                 type="button"
                                 className="bg-gray-600 text-white w-24 px-4 py-2 rounded-3xl"

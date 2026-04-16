@@ -10,11 +10,7 @@ const PostDetails = () => {
     const { id } = useParams();
     const [post, setPost] = useState(null);
     const [replies, setReplies] = useState([]);
-    const [comment, setComment] = useState('');
-    const [replyTitle, setReplyTitle] = useState('');
     const [replyBody, setReplyBody] = useState('');
-    const [replyCategory, setReplyCategory] = useState('general');
-    const [replyTags, setReplyTags] = useState('');
     const [userVote, setUserVote] = useState(null);
     const token = localStorage.getItem('token');
     let userId = null;
@@ -97,33 +93,6 @@ const PostDetails = () => {
         handleVote('downvote');
     };
 
-    const handleCommentSubmit = async (e) => {
-        e.preventDefault();
-        if (!token) {
-            toast.error('Please login to comment');
-            return;
-        }
-        try {
-            const response = await fetch(`${server}/api/posts/${id}/comments`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ comment })
-            });
-
-            if (!response.ok) throw new Error('Failed to add comment');
-
-            const updatedPost = await response.json();
-            setPost(updatedPost);
-            setComment('');
-
-        } catch (error) {
-            toast.error(error.message);
-        }
-    };
-
     const handleReplySubmit = async (e) => {
         e.preventDefault();
         if (!token) {
@@ -132,25 +101,19 @@ const PostDetails = () => {
         }
 
         try {
-            const response = await fetch(`${server}/api/posts`, {
+            const response = await fetch(`${server}/api/posts/${id}/replies`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${token}`,
                 },
                 body: JSON.stringify({
-                    title: replyTitle,
                     body: replyBody,
-                    category: replyCategory,
-                    tags: replyTags.split(',').map((tag) => tag.trim()).filter(Boolean),
-                    parentPost: id,
                 }),
             });
             if (!response.ok) throw new Error('Failed to create reply');
 
-            setReplyTitle('');
             setReplyBody('');
-            setReplyTags('');
             fetchReplies();
             toast.success('Reply posted');
         } catch (error) {
@@ -184,76 +147,17 @@ const PostDetails = () => {
                     <BiSolidDownvote /> {post?.downvotes?.length || 0}
                 </button>
             </div>
-
-            <div className="bg-gray-100 p-6 rounded-lg shadow-md mt-8">
-                <h2 className="text-2xl font-bold mb-4">{post?.comments?.length || 0} Comments </h2>
-                <form onSubmit={handleCommentSubmit} className="mb-6">
-                    <textarea
-                        value={comment}
-                        onChange={(e) => setComment(e.target.value)}
-                        placeholder="Add a comment..."
-                        className="w-full p-4 rounded-lg border focus:ring-2 focus:ring-green-500"
-                        rows="4"
-                        required
-                    ></textarea>
-                    <button
-                        type="submit"
-                        className="mt-4 bg-[#009c51] text-white font-semibold py-2 px-8 rounded-full hover:bg-green-600 transition-all"
-                    >
-                        Submit
-                    </button>
-                </form>
-
-                {post.comments.length > 0 ? (
-                    post.comments.map((com) => (
-                        <div key={com._id} className="border-t pt-4 mt-4">
-                            <p className="font-semibold text-lg">{com.user?.username}</p>
-                            <p className="text-gray-600">{com.comment}</p>
-                        </div>
-                    ))
-                ) : (
-                    <p className="text-gray-500 mt-4">No comments yet. Be the first to comment!</p>
-                )}
-            </div>
             <div className="bg-white border p-6 rounded-lg shadow-md mt-8">
                 <h2 className="text-2xl font-bold mb-4">Thread replies ({replies.length})</h2>
                 <form onSubmit={handleReplySubmit} className="space-y-3 mb-6">
-                    <input
-                        value={replyTitle}
-                        onChange={(e) => setReplyTitle(e.target.value)}
-                        className="w-full border rounded p-3 text-black"
-                        placeholder="Reply title"
-                        required
-                    />
                     <textarea
                         value={replyBody}
                         onChange={(e) => setReplyBody(e.target.value)}
                         className="w-full border rounded p-3 text-black"
-                        placeholder="Write your threaded reply"
+                        placeholder="Write your reply"
                         rows="4"
                         required
                     />
-                    <div className="grid grid-cols-2 gap-3">
-                        <select
-                            value={replyCategory}
-                            onChange={(e) => setReplyCategory(e.target.value)}
-                            className="border rounded p-3 text-black"
-                        >
-                            <option value="general">General</option>
-                            <option value="tech">Tech</option>
-                            <option value="politics">Politics</option>
-                            <option value="finance">Finance</option>
-                            <option value="education">Education</option>
-                            <option value="health">Health</option>
-                            <option value="other">Other</option>
-                        </select>
-                        <input
-                            value={replyTags}
-                            onChange={(e) => setReplyTags(e.target.value)}
-                            className="border rounded p-3 text-black"
-                            placeholder="tags,comma,separated"
-                        />
-                    </div>
                     <button className="bg-[#009c51] text-white py-2 px-6 rounded-full">Post Reply</button>
                 </form>
 
@@ -261,15 +165,8 @@ const PostDetails = () => {
                     <div className="space-y-3">
                         {replies.map((reply) => (
                             <div key={reply._id} className="border rounded p-4">
-                                <h3 className="font-semibold text-lg">{reply.title}</h3>
                                 <p className="text-sm text-gray-500 mb-1">By {reply.author?.username}</p>
-                                <p className="text-sm text-gray-700 mb-2">{reply.body.replace(/<[^>]+>/g, '').slice(0, 280)}</p>
-                                <div className="flex gap-2">
-                                    <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">{reply.category}</span>
-                                    {reply.tags?.slice(0, 3).map((tag) => (
-                                        <span key={tag} className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">#{tag}</span>
-                                    ))}
-                                </div>
+                                <p className="text-sm text-gray-700">{reply.body}</p>
                             </div>
                         ))}
                     </div>
