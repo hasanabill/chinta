@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { TbBulbFilled } from "react-icons/tb";
 import { IoIosMail } from "react-icons/io";
-import { FaUserCircle } from "react-icons/fa";
+import { FaUserCircle, FaHashtag } from "react-icons/fa";
 import { useState, useEffect } from "react";
 import jwt_decode from "jwt-decode";
 import LoginForm from "./LoginForm";
@@ -60,6 +60,9 @@ const Navbar = () => {
                 <div className="flex space-x-6">
                     <Link to="/" className="flex items-center font-bold gap-2 hover:bg-[#ff3131] py-2 px-4 rounded-3xl hover:text-white">
                         <TbBulbFilled /> Ideas
+                    </Link>
+                    <Link to="/forum/general" className="flex items-center font-bold gap-2 hover:bg-[#ff3131] py-2 px-4 rounded-3xl hover:text-white">
+                        <FaHashtag /> Forum
                     </Link>
                     <Link to="/messages" className="flex items-center font-bold gap-2 hover:bg-[#ff3131] py-2 px-4 rounded-3xl hover:text-white">
                         <IoIosMail /> Messages

@@ -1,109 +1,213 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { io } from 'socket.io-client';
+import jwt_decode from 'jwt-decode';
+import { server } from '../Routes/Routes';
+import { useParams } from 'react-router-dom';
 
 const MessagesPage = () => {
-    const [selectedUser, setSelectedUser] = useState(null);
-    const [message, setMessage] = useState('');
-
-    // Sample contact list
-    const users = [
-        { id: 1, name: 'John' },
-        { id: 2, name: 'Jane' },
-        { id: 3, name: 'Michael' },
-    ];
-
-    // Sample chat history for each user
-    const chatHistory = {
-        John: [
-            { id: 1, user: 'John', text: 'Hey, how’s it going?' },
-            { id: 2, user: 'You', text: 'Not bad! What about you?' },
-            { id: 3, user: 'John', text: 'I’m good. Working on my new project.' }
-        ],
-        Jane: [
-            { id: 1, user: 'Jane', text: 'Are you coming to the meeting?' },
-            { id: 2, user: 'You', text: 'Yes, I’ll be there in 10 minutes.' }
-        ],
-        Michael: [
-            { id: 1, user: 'Michael', text: 'Do you have the files?' },
-            { id: 2, user: 'You', text: 'Yes, I’ve sent them to your email.' }
-        ],
-    };
-
-    const handleSendMessage = (e) => {
-        e.preventDefault();
-        if (message.trim() && selectedUser) {
-            chatHistory[selectedUser].push({ id: chatHistory[selectedUser].length + 1, user: 'You', text: message });
-            setMessage('');
+    const { id: routeConversationId } = useParams();
+    const token = localStorage.getItem('token');
+    const currentUserId = useMemo(() => {
+        if (!token) return null;
+        try {
+            return jwt_decode(token)._id;
+        } catch {
+            return null;
         }
+    }, [token]);
+
+    const [conversations, setConversations] = useState([]);
+    const [selectedConversation, setSelectedConversation] = useState(null);
+    const [messages, setMessages] = useState([]);
+    const [messageInput, setMessageInput] = useState('');
+    const [recipientIdInput, setRecipientIdInput] = useState('');
+    const [error, setError] = useState('');
+
+    const fetchConversations = useCallback(async () => {
+        if (!token) return;
+        const response = await fetch(`${server}/api/messages/conversations`, {
+            headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!response.ok) return;
+        const data = await response.json();
+        setConversations(data);
+    }, [token]);
+
+    const fetchMessages = useCallback(async (conversationId) => {
+        if (!token || !conversationId) return;
+        const response = await fetch(`${server}/api/messages/conversations/${conversationId}/messages`, {
+            headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!response.ok) return;
+        const data = await response.json();
+        setMessages(data);
+    }, [token]);
+
+    const openConversation = useCallback(async (conversation) => {
+        setSelectedConversation(conversation);
+        await fetchMessages(conversation._id);
+    }, [fetchMessages]);
+
+    useEffect(() => {
+        fetchConversations();
+    }, [fetchConversations]);
+
+    useEffect(() => {
+        if (!routeConversationId || conversations.length === 0) return;
+        const target = conversations.find((conversation) => conversation._id === routeConversationId);
+        if (target) {
+            openConversation(target);
+        }
+    }, [routeConversationId, conversations, openConversation]);
+
+    useEffect(() => {
+        if (!token) return undefined;
+        const socket = io(server, { auth: { token } });
+
+        socket.on('message:receive', (incomingMessage) => {
+            setConversations((previous) => {
+                const existing = previous.find((conversation) => conversation._id === incomingMessage.conversationId);
+                if (!existing) return previous;
+                const rest = previous.filter((conversation) => conversation._id !== incomingMessage.conversationId);
+                return [{ ...existing, lastMessagePreview: incomingMessage.body, lastMessageAt: incomingMessage.createdAt }, ...rest];
+            });
+
+            if (selectedConversation?._id === incomingMessage.conversationId) {
+                setMessages((previous) => [...previous, incomingMessage]);
+            }
+        });
+
+        return () => {
+            socket.disconnect();
+        };
+    }, [token, selectedConversation?._id]);
+
+    const startConversation = async (event) => {
+        event.preventDefault();
+        setError('');
+        if (!recipientIdInput.trim()) return;
+
+        const response = await fetch(`${server}/api/messages/conversations/${recipientIdInput.trim()}`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}` },
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+            setError(data.error || 'Failed to start conversation');
+            return;
+        }
+
+        setRecipientIdInput('');
+        await fetchConversations();
+        setSelectedConversation(data);
+        await fetchMessages(data._id);
     };
+
+    const sendMessage = async (event) => {
+        event.preventDefault();
+        if (!selectedConversation || !messageInput.trim()) return;
+
+        const response = await fetch(`${server}/api/messages/conversations/${selectedConversation._id}/messages`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ body: messageInput.trim() }),
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+            setError(data.error || 'Failed to send message');
+            return;
+        }
+
+        setMessages((previous) => [...previous, data]);
+        setMessageInput('');
+        setError('');
+        fetchConversations();
+    };
+
+    if (!token || !currentUserId) {
+        return <p className="p-6 text-center text-gray-600">Please login to use messaging.</p>;
+    }
 
     return (
-        <div className="flex h-svh">
-            {/* Sidebar */}
-            <div className="w-1/4 bg-gray-200 p-4">
-                <h2 className="text-xl font-bold mb-4">Active Messages</h2>
-                <ul>
-                    {users.map((user) => (
-                        <li
-                            key={user.id}
-                            className={`p-4 rounded-lg cursor-pointer mb-2 ${selectedUser === user.name ? 'bg-green-600 text-white' : 'bg-gray-300'}`}
-                            onClick={() => setSelectedUser(user.name)}
-                        >
-                            {user.name}
-                        </li>
-                    ))}
+        <div className="flex h-[calc(100vh-90px)]">
+            <aside className="w-80 bg-gray-100 p-4 border-r overflow-y-auto">
+                <h2 className="text-lg font-bold mb-3">Conversations</h2>
+                <form onSubmit={startConversation} className="mb-4">
+                    <input
+                        value={recipientIdInput}
+                        onChange={(event) => setRecipientIdInput(event.target.value)}
+                        className="w-full px-3 py-2 border rounded text-black"
+                        placeholder="Start chat with user ID"
+                    />
+                    <button className="w-full mt-2 bg-[#009c51] text-white py-2 rounded">Start chat</button>
+                </form>
+                <ul className="space-y-2">
+                    {conversations.map((conversation) => {
+                        const peer = conversation.participants.find((user) => user._id !== currentUserId);
+                        return (
+                            <li
+                                key={conversation._id}
+                                className={`p-3 rounded cursor-pointer ${selectedConversation?._id === conversation._id ? 'bg-green-600 text-white' : 'bg-white'}`}
+                                onClick={() => openConversation(conversation)}
+                            >
+                                <p className="font-semibold">{peer?.username || 'Unknown user'}</p>
+                                <p className={`text-sm truncate ${selectedConversation?._id === conversation._id ? 'text-green-100' : 'text-gray-500'}`}>
+                                    {conversation.lastMessagePreview || 'No messages yet'}
+                                </p>
+                            </li>
+                        );
+                    })}
                 </ul>
-            </div>
+            </aside>
 
-            {/* Chatbox */}
-            <div className="flex-1 flex flex-col">
-                <header className="bg-green-700 text-white py-4 px-6 text-xl font-bold">
-                    {selectedUser ? `Chat with ${selectedUser}` : 'Select a conversation'}
+            <section className="flex-1 flex flex-col bg-white">
+                <header className="border-b p-4 font-semibold">
+                    {selectedConversation
+                        ? `Chat with ${selectedConversation.participants.find((user) => user._id !== currentUserId)?.username || 'user'}`
+                        : 'Select a conversation'}
                 </header>
 
-                <div className="flex-1 overflow-y-auto p-6 bg-gray-100">
-                    {selectedUser ? (
-                        <div className="flex flex-col space-y-4">
-                            {chatHistory[selectedUser].map((msg) => (
+                <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
+                    {selectedConversation ? (
+                        <div className="space-y-3">
+                            {messages.map((message) => (
                                 <div
-                                    key={msg.id}
-                                    className={`flex ${msg.user === 'You' ? 'justify-end' : 'justify-start'}`}
+                                    key={message._id}
+                                    className={`flex ${message.sender?._id === currentUserId ? 'justify-end' : 'justify-start'}`}
                                 >
-                                    <div
-                                        className={`px-4 py-2 rounded-lg max-w-xs ${msg.user === 'You'
-                                            ? 'bg-green-600 text-white'
-                                            : 'bg-gray-300 text-gray-900'
-                                            }`}
-                                    >
-                                        <p className="text-sm font-bold">{msg.user}</p>
-                                        <p>{msg.text}</p>
+                                    <div className={`max-w-lg rounded px-4 py-2 ${message.sender?._id === currentUserId ? 'bg-green-600 text-white' : 'bg-gray-200 text-black'}`}>
+                                        <p className="text-xs opacity-80 mb-1">{message.sender?.username || 'Unknown'}</p>
+                                        <p>{message.body}</p>
                                     </div>
                                 </div>
                             ))}
                         </div>
                     ) : (
-                        <p className="text-center text-gray-500">Please select a contact to start chatting.</p>
+                        <p className="text-gray-500">Pick a conversation to start messaging.</p>
                     )}
                 </div>
 
-                {/* Input form */}
-                {selectedUser && (
-                    <form onSubmit={handleSendMessage} className="bg-gray-200 p-4 flex fixed bottom-0 w-3/4">
+                {error && <p className="px-4 py-2 text-red-600 text-sm border-t">{error}</p>}
+
+                {selectedConversation && (
+                    <form onSubmit={sendMessage} className="border-t p-4 flex gap-2">
                         <input
-                            type="text"
-                            className="flex-1 px-4 py-2 rounded-l-lg text-black"
+                            value={messageInput}
+                            onChange={(event) => setMessageInput(event.target.value)}
+                            className="flex-1 border rounded px-4 py-2 text-black"
                             placeholder="Type your message..."
-                            value={message}
-                            onChange={(e) => setMessage(e.target.value)}
                         />
-                        <button
-                            type="submit"
-                            className="bg-green-700 hover:bg-green-800 text-white px-6 py-2 rounded-r-lg"
-                        >
+                        <button type="submit" className="bg-[#009c51] text-white px-6 rounded">
                             Send
                         </button>
                     </form>
                 )}
-            </div>
+            </section>
         </div>
     );
 };

@@ -7,6 +7,7 @@ import PostDetails from "../pages/PostDetails";
 import NotFound from "../pages/NotFound";
 import Messages from "../pages/Messages";
 import Profile from "../pages/Profile";
+import ForumCategory from "../pages/ForumCategory";
 
 export const router = createBrowserRouter([
     {
@@ -20,6 +21,14 @@ export const router = createBrowserRouter([
             {
                 path: "/messages",
                 element: <Messages />
+            },
+            {
+                path: "/conversation/:id",
+                element: <Messages />
+            },
+            {
+                path: "/forum/:category",
+                element: <ForumCategory />
             },
             {
                 path: "profile/:id",

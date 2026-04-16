@@ -52,7 +52,7 @@ router.post('/login', async (req, res) => {
 
 router.get('/:id', async (req, res) => {
     try {
-        const user = await User.findById(req.params.id);
+        const user = await User.findById(req.params.id).select('-password');
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
         }
@@ -77,6 +77,14 @@ router.get('/profile/:id', async (req, res) => {
             .populate({
                 path: 'downvotedPosts',
                 select: 'title createdAt',
+            })
+            .populate({
+                path: 'followers',
+                select: 'username profilePicture',
+            })
+            .populate({
+                path: 'following',
+                select: 'username profilePicture',
             });
 
         if (!user) {

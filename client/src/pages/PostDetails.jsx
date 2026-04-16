@@ -9,7 +9,12 @@ import jwt_decode from 'jwt-decode';
 const PostDetails = () => {
     const { id } = useParams();
     const [post, setPost] = useState(null);
+    const [replies, setReplies] = useState([]);
     const [comment, setComment] = useState('');
+    const [replyTitle, setReplyTitle] = useState('');
+    const [replyBody, setReplyBody] = useState('');
+    const [replyCategory, setReplyCategory] = useState('general');
+    const [replyTags, setReplyTags] = useState('');
     const [userVote, setUserVote] = useState(null);
     const token = localStorage.getItem('token');
     let userId = null;
@@ -44,9 +49,21 @@ const PostDetails = () => {
         }
     }, [id, token, userId]);
 
+    const fetchReplies = useCallback(async () => {
+        try {
+            const response = await fetch(`${server}/api/posts/${id}/replies`);
+            if (!response.ok) throw new Error('Failed to fetch replies');
+            const data = await response.json();
+            setReplies(data);
+        } catch (error) {
+            toast.error(error.message);
+        }
+    }, [id]);
+
     useEffect(() => {
         fetchPost();
-    }, [fetchPost]);
+        fetchReplies();
+    }, [fetchPost, fetchReplies]);
 
     const handleVote = async (type) => {
         if (!token) {
@@ -107,6 +124,40 @@ const PostDetails = () => {
         }
     };
 
+    const handleReplySubmit = async (e) => {
+        e.preventDefault();
+        if (!token) {
+            toast.error('Please login to reply');
+            return;
+        }
+
+        try {
+            const response = await fetch(`${server}/api/posts`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                    title: replyTitle,
+                    body: replyBody,
+                    category: replyCategory,
+                    tags: replyTags.split(',').map((tag) => tag.trim()).filter(Boolean),
+                    parentPost: id,
+                }),
+            });
+            if (!response.ok) throw new Error('Failed to create reply');
+
+            setReplyTitle('');
+            setReplyBody('');
+            setReplyTags('');
+            fetchReplies();
+            toast.success('Reply posted');
+        } catch (error) {
+            toast.error(error.message);
+        }
+    };
+
     if (!post) return <LoadingSpinner />;
 
     return (
@@ -162,6 +213,68 @@ const PostDetails = () => {
                     ))
                 ) : (
                     <p className="text-gray-500 mt-4">No comments yet. Be the first to comment!</p>
+                )}
+            </div>
+            <div className="bg-white border p-6 rounded-lg shadow-md mt-8">
+                <h2 className="text-2xl font-bold mb-4">Thread replies ({replies.length})</h2>
+                <form onSubmit={handleReplySubmit} className="space-y-3 mb-6">
+                    <input
+                        value={replyTitle}
+                        onChange={(e) => setReplyTitle(e.target.value)}
+                        className="w-full border rounded p-3 text-black"
+                        placeholder="Reply title"
+                        required
+                    />
+                    <textarea
+                        value={replyBody}
+                        onChange={(e) => setReplyBody(e.target.value)}
+                        className="w-full border rounded p-3 text-black"
+                        placeholder="Write your threaded reply"
+                        rows="4"
+                        required
+                    />
+                    <div className="grid grid-cols-2 gap-3">
+                        <select
+                            value={replyCategory}
+                            onChange={(e) => setReplyCategory(e.target.value)}
+                            className="border rounded p-3 text-black"
+                        >
+                            <option value="general">General</option>
+                            <option value="tech">Tech</option>
+                            <option value="politics">Politics</option>
+                            <option value="finance">Finance</option>
+                            <option value="education">Education</option>
+                            <option value="health">Health</option>
+                            <option value="other">Other</option>
+                        </select>
+                        <input
+                            value={replyTags}
+                            onChange={(e) => setReplyTags(e.target.value)}
+                            className="border rounded p-3 text-black"
+                            placeholder="tags,comma,separated"
+                        />
+                    </div>
+                    <button className="bg-[#009c51] text-white py-2 px-6 rounded-full">Post Reply</button>
+                </form>
+
+                {replies.length > 0 ? (
+                    <div className="space-y-3">
+                        {replies.map((reply) => (
+                            <div key={reply._id} className="border rounded p-4">
+                                <h3 className="font-semibold text-lg">{reply.title}</h3>
+                                <p className="text-sm text-gray-500 mb-1">By {reply.author?.username}</p>
+                                <p className="text-sm text-gray-700 mb-2">{reply.body.replace(/<[^>]+>/g, '').slice(0, 280)}</p>
+                                <div className="flex gap-2">
+                                    <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">{reply.category}</span>
+                                    {reply.tags?.slice(0, 3).map((tag) => (
+                                        <span key={tag} className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">#{tag}</span>
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <p className="text-gray-500">No threaded replies yet.</p>
                 )}
             </div>
         </div>

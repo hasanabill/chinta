@@ -7,6 +7,8 @@ import { server } from "../Routes/Routes";
 const PostModal = ({ closeModal }) => {
     const [title, setTitle] = useState('');
     const [body, setBody] = useState('');
+    const [category, setCategory] = useState('general');
+    const [tags, setTags] = useState('');
     const token = localStorage.getItem('token');
 
     const handleSubmit = async (e) => {
@@ -19,7 +21,12 @@ const PostModal = ({ closeModal }) => {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ title, body })
+                body: JSON.stringify({
+                    title,
+                    body,
+                    category,
+                    tags: tags.split(',').map((tag) => tag.trim()).filter(Boolean),
+                })
             });
 
             if (!response.ok) throw new Error('Failed to create post');
@@ -55,6 +62,34 @@ const PostModal = ({ closeModal }) => {
                             placeholder="Describe your idea..."
                             theme="snow"
                         />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 mt-12">
+                        <div>
+                            <label className="block text-gray-700 mb-2">Category</label>
+                            <select
+                                value={category}
+                                onChange={(e) => setCategory(e.target.value)}
+                                className="w-full border border-gray-300 p-2 rounded text-black"
+                            >
+                                <option value="general">General</option>
+                                <option value="tech">Tech</option>
+                                <option value="politics">Politics</option>
+                                <option value="finance">Finance</option>
+                                <option value="education">Education</option>
+                                <option value="health">Health</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-gray-700 mb-2">Tags</label>
+                            <input
+                                type="text"
+                                value={tags}
+                                onChange={(e) => setTags(e.target.value)}
+                                className="w-full border border-gray-300 p-2 rounded text-black"
+                                placeholder="comma,separated,tags"
+                            />
+                        </div>
                     </div>
                     <div className="flex justify-between items-center gap-2 mt-16">
                         <div>

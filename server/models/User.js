@@ -31,7 +31,17 @@ const userSchema = new mongoose.Schema({
     posts: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Post' }], // Authored posts
     upvotedPosts: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Post' }], // Posts upvoted by user
     downvotedPosts: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Post' }], // Posts downvoted by user
+    followers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    following: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    allowMessagesFrom: {
+        type: String,
+        enum: ['everyone', 'following'],
+        default: 'following',
+    },
 });
+
+userSchema.index({ followers: 1 });
+userSchema.index({ following: 1 });
 
 userSchema.pre('save', async function (next) {
     if (!this.isModified('password')) return next();
