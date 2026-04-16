@@ -66,5 +66,5 @@ export const router = createBrowserRouter([
     },
 ]);
 
-export const server = "http://localhost:5000";
-// export const server = "https://chinta-server.vercel.app";
+// export const server = "http://localhost:5000";
+export const server = "https://chinta-server.vercel.app";
